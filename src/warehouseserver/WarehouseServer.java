@@ -16,9 +16,14 @@
  */
 package warehouseserver;
 
+import Main.Server;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
- * @author Studente
+ * @author Daniil Gentili
  */
 public class WarehouseServer {
 
@@ -26,6 +31,10 @@ public class WarehouseServer {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        new MultiServer(9090).start();
+        try {
+            new MultiServer(9090, new Server("/root/NetBeansProjects/WarehouseServer/src/warehouseserver/warehouse.txt")).run();
+        } catch (IOException ex) {
+            Logger.getLogger(WarehouseServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }    
 }

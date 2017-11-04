@@ -16,6 +16,7 @@
  */
 package warehouseserver;
 
+import Main.Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
@@ -25,21 +26,34 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author Studente
+ * @author Daniil Gentili
  */
 public class MultiServer {
-    private Integer port;
-    
-    MultiServer(Integer port) {
-        this.port = port;
+    private final Server warehouse;
+    private final ServerSocket socketServer;
+    private final ExecutorService pool;
+    MultiServer(Integer port, Server server) throws IOException {
+        this.warehouse = server;
+        this.pool = newCachedThreadPool();
+        this.socketServer = new ServerSocket(port);
+        
     }
-    public void start() {
+    public void run() {
         try {
-            ExecutorService pool = newCachedThreadPool();
-            ServerSocket server = new ServerSocket(port);
             while (true) {
-                pool.submit(new ConnectionRunnable(server.accept()));
+                pool.submit(new ConnectionRunnable(socketServer.accept(), warehouse));
             }
+        } catch (IOException ex) {
+            Logger.getLogger(MultiServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        pool.shutdown();
+        try {
+            socketServer.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MultiServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            warehouse.close();
         } catch (IOException ex) {
             Logger.getLogger(MultiServer.class.getName()).log(Level.SEVERE, null, ex);
         }

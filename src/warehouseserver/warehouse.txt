@@ -1,2 +1,2 @@
-1;Twilight Sparkle plushie;49.99;20
-666;Tempest Shadow plushie;79.99;10
+666;Tempest Shadow plushie;79.990000;10
+0;Twilight Sparkle plushie;49.990000;0

@@ -16,6 +16,8 @@
  */
 package warehouseserver;
 
+import Main.ClientException;
+import Main.Server;
 import Payloads.ServerException;
 import Payloads.RequestPayload;
 import Payloads.ResponsePayload;
@@ -25,29 +27,28 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
- * @author Studente
+ * @author Daniil Gentili
  */
 public class ConnectionRunnable implements Runnable {
 
     BufferedReader input;
     BufferedWriter output;
     Socket client;
+    Server warehouse;
     Boolean run = true;
     String path = "/root/NetBeansProjects/WarehouseServer/src/warehouseserver/warehouse.txt";
 
-    public ConnectionRunnable(Socket client) throws IOException {
+    public ConnectionRunnable(Socket client, Server warehouse) throws IOException {
         this.client = client;
+        this.warehouse = warehouse;
         input = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        output = new BufferedWriter(new OutputStreamWriter(client.getOutputStream())); 
+        output = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
     }
-
 
     @Override
     public void run() {
@@ -68,6 +69,11 @@ public class ConnectionRunnable implements Runnable {
                 Logger.getLogger(ConnectionRunnable.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        try {
+            client.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ConnectionRunnable.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private ResponsePayload handlePayload(RequestPayload request) throws ServerException, IOException {
@@ -75,7 +81,7 @@ public class ConnectionRunnable implements Runnable {
             throw new ServerException(request, 400, "Bad request", "Wrong protocol");
         }
         run = request.shouldKeepAlive();
-        
+
         switch (request.getMethod()) {
             case "GET":
                 if (!"/".equals(request.getURI())) {
@@ -84,9 +90,17 @@ public class ConnectionRunnable implements Runnable {
                 return new ResponsePayload(request, 200, "OK", getDatabase());
             case "POST":
                 if (!"/".equals(request.getURI())) {
+                    System.out.println(String.format("%s spent %s", client.getInetAddress().getCanonicalHostName(), request.getPayload()));
+                    return new ResponsePayload(request, 200, "OK");
+                } else if ("/".equals(request.getURI())) {
+                    try {
+                        return new ResponsePayload(request, 200, "OK", updateDatabase(request.getPayload()));
+                    } catch (ClientException ex) {
+                        throw new ServerException(request, 500, ex.getMessage(), getDatabase());
+                    }
+                } else {
                     throw new ServerException(request, 404, "File not found", "Database not found");
                 }
-                return new ResponsePayload(request, 200, "OK", getDatabase());
             default:
                 throw new ServerException(request, 400, "Bad Request", "Bad HTTP method");
 
@@ -94,8 +108,13 @@ public class ConnectionRunnable implements Runnable {
 
     }
 
-    synchronized private String getDatabase() throws IOException {
-        return String.join("\n", Files.readAllLines(Paths.get(path)));
+    synchronized private String updateDatabase(String input) throws ClientException, IOException {
+        warehouse.checkout(input);
+        return warehouse.getWarehouse().getPayload();
+    }
+
+    synchronized private String getDatabase() {
+        return warehouse.getWarehouse().getPayload();
     }
 
 }
