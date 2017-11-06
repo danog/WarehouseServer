@@ -52,10 +52,5 @@ public class MultiServer {
         } catch (IOException ex) {
             Logger.getLogger(MultiServer.class.getName()).log(Level.SEVERE, null, ex);
         }
-        try {
-            warehouse.close();
-        } catch (IOException ex) {
-            Logger.getLogger(MultiServer.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 }

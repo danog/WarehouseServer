@@ -108,12 +108,12 @@ public class ConnectionRunnable implements Runnable {
 
     }
 
-    synchronized private String updateDatabase(String input) throws ClientException, IOException {
+    private String updateDatabase(String input) throws ClientException, IOException {
         warehouse.checkout(input);
         return warehouse.getWarehouse().getPayload();
     }
 
-    synchronized private String getDatabase() {
+    private String getDatabase() {
         return warehouse.getWarehouse().getPayload();
     }
 
